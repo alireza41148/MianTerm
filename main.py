@@ -53,13 +53,11 @@ def login():
             lblMsg.configure(text=f'Wrong password! {remaining_attempts} attempts left.', fg='red')
         return
 
-    #lblMsg.configure(text='Welcome to your account!', fg='green')
     session = data
     win.lblWelcome.config(text=f"Welcome, {session[1]}!")
     txtUser.delete(0, 'end')
     txtPass.delete(0, 'end')
     btnLogin.configure(state='disabled')
-    #btnLogout.configure(state='active')
     btnDelete.configure(state='active')
     btnshop.configure(state='active')
     btnQuickLogout.configure(state='active') 
@@ -71,7 +69,6 @@ def logout():
     session = False
     lblMsg.configure(text='You are logged out now!', fg='green')
     btnLogin.configure(state='active')
-    #btnLogout.configure(state='disabled')
     btnshop.configure(state='disabled')
     btnDelete.configure(state='disabled')
     btnQuickLogout.configure(state='disabled')  
@@ -88,7 +85,6 @@ def delAc():
     lblMsg.configure(text='Your account deleted!', fg='green')
     session = False
     btnLogin.configure(state='active')
-    #btnLogout.configure(state='disabled')
     btnDelete.configure(state='disabled')
     btnshop.configure(state='disabled')
 
@@ -183,6 +179,7 @@ def shopPanel():
     lblmsg2 = tkinter.Label(winShop, text='')
     lblmsg2.pack()
 
+
     cart = []
 
     
@@ -256,14 +253,13 @@ def shopPanel():
 def forgotPassword():
     winForgot = tkinter.Toplevel(win)
     winForgot.title('Forgot Password')
-    winForgot.geometry('320x220')
+    winForgot.geometry('320x300')
     winForgot.resizable(False, False)
 
     lblUser = tkinter.Label(winForgot, text='Username:')
     lblUser.pack()
     txtUser = tkinter.Entry(winForgot)
     txtUser.pack()
-
 
     a = random.randint(1, 9)
     b = random.randint(1, 9)
@@ -274,6 +270,39 @@ def forgotPassword():
 
     lblMsg = tkinter.Label(winForgot, text='')
     lblMsg.pack()
+
+    def show_new_pass_fields():
+        lblNewPass = tkinter.Label(winForgot, text='New Password:')
+        lblNewPass.pack()
+        txtNewPass = tkinter.Entry(winForgot, show='*')
+        txtNewPass.pack()
+        lblConfirm = tkinter.Label(winForgot, text='Confirm Password:')
+        lblConfirm.pack()
+        txtConfirm = tkinter.Entry(winForgot, show='*')
+        txtConfirm.pack()
+        lblSetMsg = tkinter.Label(winForgot, text='')
+        lblSetMsg.pack()
+
+        def set_new_password():
+            new_pass = txtNewPass.get()
+            confirm = txtConfirm.get()
+            if not new_pass or not confirm:
+                lblSetMsg.config(text='Fill all fields!', fg='red')
+                return
+            if new_pass != confirm:
+                lblSetMsg.config(text='Passwords do not match!', fg='red')
+                return
+            if len(new_pass) < 8:
+                lblSetMsg.config(text='Password too short!', fg='red')
+                return
+            cnt.execute("UPDATE users SET password=?, failed_attempts=0, lock_until=NULL WHERE username=?", (new_pass, txtUser.get()))
+            cnt.commit()
+            lblSetMsg.config(text='Password changed successfully!', fg='green')
+
+        btnSet = tkinter.Button(winForgot, text='Set New Password', command=set_new_password, bg='lightgreen')
+        btnSet.pack(pady=8)
+        apply_theme(winForgot)
+        add_hover_effects(winForgot)
 
     def checkAnswer():
         user = txtUser.get()
@@ -287,14 +316,9 @@ def forgotPassword():
             if not data:
                 lblMsg.configure(text='User not found!', fg='red')
                 return
-            lock_until = data[6]
-            if not lock_until:
-                lblMsg.configure(text='Account is not locked!', fg='blue')
-                return
-            # آنلاک کردن اکانت
-            cnt.execute("UPDATE users SET failed_attempts=0, lock_until=NULL WHERE username=?", (user,))
-            cnt.commit()
-            lblMsg.configure(text='Account unlocked!', fg='green')
+            lblMsg.configure(text='Security check passed. Set new password.', fg='green')
+            btnCheck.config(state='disabled')
+            show_new_pass_fields()
         else:
             lblMsg.configure(text='Wrong answer!', fg='red')
 
@@ -367,8 +391,14 @@ def add_hover_effects(window):
                 w['bg'] = '#888'
             def on_leave(e, w=widget, bg=normal_bg):
                 w['bg'] = bg
+            def on_press(e, w=widget):
+                w['bg'] = '#555'
+            def on_release(e, w=widget, bg=normal_bg):
+                w['bg'] = '#888' if w == window.focus_get() else bg
             widget.bind("<Enter>", on_enter)
             widget.bind("<Leave>", on_leave)
+            widget.bind("<ButtonPress>", on_press)
+            widget.bind("<ButtonRelease>", on_release)
         if isinstance(widget, tkinter.Toplevel):
             add_hover_effects(widget)
 
@@ -376,9 +406,6 @@ def update_datetime():
     now = datetime.datetime.now().strftime('%Y-%m-%d   %H:%M:%S')
     lblDateTime.config(text=now)
     win.after(1000, update_datetime)
-
-
-#-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-_-main-_-_-_-_-_-_-_-_-_-_--_-_-_-_-_-_-_-
 
 
 session = False
@@ -410,8 +437,6 @@ btnSignup = tkinter.Button(win, text='Signup', command=signup, bg='lightblue', w
 btnSignup.pack(pady=2)
 frame_actions = tkinter.Frame(win, bg=win['bg'])
 frame_actions.pack(pady=8)
-#btnLogout = tkinter.Button(frame_actions, text='Logout', state='disabled', command=logout, bg='lightcoral', width=10)
-#btnLogout.grid(row=0, column=0, padx=2)
 btnDelete = tkinter.Button(frame_actions, text='Delete account!', state='disabled', command=delAc, bg='lightpink', width=13)
 btnDelete.grid(row=0, column=1, padx=2)
 btnTheme = tkinter.Button(frame_actions, text='Toggle Theme', command=toggle_theme, bg='orange', width=11)
